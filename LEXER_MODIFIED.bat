@@ -20,6 +20,8 @@ mode con cols=80 lines=25
 if "%~1"=="--buzzkill" goto :desktopSetup
 
 call :boot
+call :checkFiles
+call :checkSettings
 call :loadingBar
 call :setUDI
 
@@ -49,7 +51,7 @@ call :getClick
 title [%mouse_X%:%mouse_Y%] - %mouse_C%
 
 for /L %%A in (1,1,7) do (
-	if "%mouse_X%"=="%%A" if "%mouse_Y%"=="24" goto :startMenu
+	if "%mouse_X%" == "%%A" if "%mouse_Y%" == "24" goto :startMenu
 )
 goto :desktop
 
@@ -146,11 +148,6 @@ if "%command%"=="%cm_act%" (
 	echo LEXER has successfully activated
 	set "activated=true"
 )
-if "%command%"=="%cm_dskr_restore%" (
-	echo Restoring Image. . .
-	TIMEOUT 60
-	
-)
 REM if "%command%"=="%cm_tbsht_hardware%" goto :repairSecTroubleshoot
 REM if "%command%"=="%cm_dskr_scan%" goto :diskScan
 if /I "%command%"=="exit" (
@@ -193,14 +190,13 @@ set "day=%LocalDateTime:~6,2%"
 :: ST: "Literally the only reason I'm keeping this here is because it will
 ::      be used later for something that I don't know about. Personally, I think
 ::      we should delete it and add it back when we need it."
-:: PTS: "This is for the personalization. Everything will be put as a comment and later changed" 
 ::Planning to implement the color handler once personalization update gets released
-::set colorgreen=0x010
-::set colorblue=0x001
-::set colorred=0x100
-::set colormagenta=0x101
-::set colorbrown=0x110
-::set colorwhite=1x111
+set colorgreen=0x010
+set colorblue=0x001
+set colorred=0x100
+set colormagenta=0x101
+set colorbrown=0x110
+set colorwhite=1x111
 
 ::Setting Command Variables for the Prompt
 set cm_act=lxract /act
@@ -214,7 +210,9 @@ set cm_change_color_green=lxrcolor /green
 set cm_change_color_red=lxrcolor /red
 set cm_change_color_blue=lxrcolor /blue
 
-::We will see in the future
+::Random int that decide if the error should be triggered. Every startup is random
+:: ST: "I know when *I* start my computer, I want there to be a chance of it not
+::      working! Also, min and max are never set, so nothing happens here anyway."
 set /a gRandomWholeCritical=(%RANDOM%*max/32768)+min
 set /a gRandomWholeLoad=(%RANDOM%*max/32768)+min
 exit /b
@@ -255,7 +253,6 @@ if exist udi.txt (
 title LEXER Setup
 cls
 :: ST: "It fades in, it's just super subtle because there are only two colors"
-:: PTS: "Really cool. It's like an Windows 10 Installation"
 for %%A in (0 8 7 F) do batbox /g 39 11 /c 0x0%%A /d "Hi" /w 200
 batbox /w 800
 for %%A in (F 7 8 0) do batbox /g 39 11 /c 0x0%%A /d "Hi" /w 200
@@ -381,7 +378,7 @@ if "%license%"=="ptsio-jofhn-hf627-88945" (
 	>license.txt echo %license%
 )
 
-:: ST: "Why fake it when you can show them the real thing?"
+:: PTS: "Cause I don't know how to automatically detect the time."
 :finishSetup
 cls
 set reg_locale=reg query "HKCU\Control Panel\International" /v
@@ -460,19 +457,44 @@ batbox /c 0x00 /g 0 1 /d "                                                      
 exit /b
 
 :diskScan
-set /a "shouldScan"=0
 title LEXER: Disk scan
-cls
-batbox /g 22 0 /d "SELECT YOUR INSTALLATION PARTITION"
-echo.
-cmdMenuSel f880 "C:\"
-if "%ERRORLEVEL%" == "1" (
-echo The drive is in use, wanna scan after a restart?
-set /p "y_n"=
-if "%y_n%" == "y" (
-	set /a "shouldScan"=1
-	)
-if "%y_n%" == "n" (
-	set /a "shouldScan"=0
-	)
+batbox /g 0 10
+echo ###############################################################################
+echo #-----------------------------------------------------------------------------#
+echo ###############################################################################
+echo                                                                 Scanning %diskC%...
+batbox /g 1 11 /h 0
+for /L %%A in (1,1,77) do batbox /d "/" /w 50
+echo LEXER Found no errors and %diskC% is working normal
+call :clearScreen
+goto :desktop
+
+:checkFiles
+if exist batbox.exe goto :loadingBar
+if not exist batbox.exe (
+set /a "hasbatb=1"
+)
+if exist cmdmenusel.exe goto :loadingBar
+if not exist cmdmenusel.exe (
+set /a "hasmenus=1"
+)
+if "%hasmenus%" == "1" && "%hasbabt%" == "1" (
+echo The following files are missing:
+echo cmdmenusel.exe
+echo batbox.exe
+TIMEOUT 2
+echo Please download these files and put it in the same file where LEXER OS is located and try again.
+echo If you are experiencing issues, please contact purpleguygamer582@gmail.com for the support.
+pause
+exit /b
+)
+exit /b
+
+:checkSettings
+title LEXER
+set reg_qry=reg Query "HKCU\Console\%SystemRoot%_system32_cmd.exe\" /v
+for /f "skip=2 tokens=1,2,*" %%A in ('%reg_locale% QuickEdit') do set "quickEdit=%%C"
+if "%quickEdit%" == "0" call :loadingBar
+if "%quickEdit%" == "1" (
+	reg add "HKCU\Console\%SystemRoot%_system32_cmd.exe\" /v QuickEdit /t REG_DWORD /d 0 /f
 )
