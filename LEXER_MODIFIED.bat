@@ -20,8 +20,8 @@ mode con cols=80 lines=25
 if "%~1"=="--buzzkill" goto :desktopSetup
 
 call :boot
-call :checkFiles
-call :checkSettings
+REM call :checkFiles
+REM call :checkSettings
 call :loadingBar
 call :setUDI
 
@@ -61,8 +61,8 @@ for /L %%A in (23,-1,13) do (
 )
 set "menu_option=batbox /g 1 xxx /c 0x1F /d"
 %menu_option:xxx=14% " Control Panel                "
-%menu_option:xxx=15% " Games (Not Available)        "
-%menu_option:xxx=16% " LEXER Mailer (Not Available) "
+%menu_option:xxx=15% " Games 				        "
+%menu_option:xxx=16% " LEXER Mailer					"
 %menu_option:xxx=21% " About...                     "
 %menu_option:xxx=22% " Restart                      "
 %menu_option:xxx=23% " Exit                         "
@@ -79,8 +79,10 @@ for /L %%A in (1,1,30) do (
 			goto :desktop
 		)
 		if "%mouse_Y%"=="14" goto :ctrlPanel
+		if "%mouse_Y%"=="15" goto :games
 		if "%mouse_Y%"=="21" goto :about
 		if "%mouse_Y%"=="22" goto :desktopSetup
+		if "%mouse_Y%"=="16" goto :mailer
 		if "%mouse_Y%"=="23" (
 			batbox /h 1 /c 0x07
 			cls
@@ -146,7 +148,27 @@ batbox /g 1 1 /c 0x07 /h 1
 set /p "command=$%user%:\%user%\LEXER\Sys\>"
 if "%command%"=="%cm_act%" (
 	echo LEXER has successfully activated
+	TIMEOUT 5
 	set "activated=true"
+)
+if "%command%"=="%cm_run_update_service%" (
+	call LEXER_UPDATE.bat
+)
+if "%command%"=="%cm_show_commands%" (
+	echo %cm_act% (Activates LEXEr)
+	echo %cm_tbsht_hardware% (Troubleshoots Hardware)
+	echo %cm_tbsht_input% (Troubleshoots input devices)
+	echo %cm_tbsht_os% (Scans the OS for errors)
+	echo %cm_dskr_scan% (Scans the health of the computer)
+	echo %cm_dskr_check% (Checks if the main driver is not damaged)
+	echo %cm_dskr_restore% (Replaces corrupted files with the new ones)
+	echo %cm_change_color_green% (Changes color to green)
+	echo %cm_change_color_red% (Changes color to red)
+	echo %cm_change_color_blue% (Changes color to blue)
+	echo %cm_run_update_service% (Checks for intelligence updates)
+	echo %cm_run_update_os% (Checks for new versions of LEXER)
+	echo %cm_replace_update_files% (Replaces files that LEXER needs to update)
+	echo %cm_show_commands=/?% (Shows the list of commands)
 )
 REM if "%command%"=="%cm_tbsht_hardware%" goto :repairSecTroubleshoot
 REM if "%command%"=="%cm_dskr_scan%" goto :diskScan
@@ -181,6 +203,10 @@ set /a errorTrig=0
 set /a launchRepair=0
 set /a cannotCont=0
 
+:: CS21: "Here I will just add if some of these variables are true or not.
+:: If it's true it will just give a splash error box (similar to the about splash screen)
+:: and it will redirect to error handler and it will show what's wrong"
+
 :: Get the date without worrying what the locale is
 for /f %%A in ('wmic os get localdatetime /Value ^| find "."') do set %%A
 set "year=%LocalDateTime:~0,4%"
@@ -209,6 +235,10 @@ set cm_dskr_restore=dskr /restorehealth
 set cm_change_color_green=lxrcolor /green
 set cm_change_color_red=lxrcolor /red
 set cm_change_color_blue=lxrcolor /blue
+set cm_run_update_service=lxrupdate /check /i
+set cm_run_update_os=lxrupdate /check /l
+set cm_replace_update_files=curl "$%user%:\%user%\LEXER\Sys\Distribution\Updates" /o /l
+set cm_show_commands=/?
 
 ::Random int that decide if the error should be triggered. Every startup is random
 :: ST: "I know when *I* start my computer, I want there to be a chance of it not
@@ -420,6 +450,8 @@ for /F "tokens=1-3 delims=:" %%A in ('batbox /m') do (
 	set "mouse_Y=%%B"
 	set "mouse_C=%%C"
 )
+
+if "%mouse_C%" == "2" call
 exit /b
 
 ::------------------------------------------------------------------------------
@@ -465,36 +497,110 @@ echo ###########################################################################
 echo                                                                 Scanning %diskC%...
 batbox /g 1 11 /h 0
 for /L %%A in (1,1,77) do batbox /d "/" /w 50
+if "%corrupted%" == "1" (
+echo LEXER Found corrupted files and bad sectors on %diskC%.
+echo It is recommended to run Automatic Repair!
+)
 echo LEXER Found no errors and %diskC% is working normal
 call :clearScreen
 goto :desktop
 
 :checkFiles
-if exist batbox.exe goto :loadingBar
-if not exist batbox.exe (
-set /a "hasbatb=1"
-)
-if exist cmdmenusel.exe goto :loadingBar
-if not exist cmdmenusel.exe (
-set /a "hasmenus=1"
-)
-if "%hasmenus%" == "1" && "%hasbabt%" == "1" (
-echo The following files are missing:
-echo cmdmenusel.exe
-echo batbox.exe
-TIMEOUT 2
-echo Please download these files and put it in the same file where LEXER OS is located and try again.
-echo If you are experiencing issues, please contact purpleguygamer582@gmail.com for the support.
-pause
-exit /b
-)
-exit /b
+:: if exist batbox.exe goto :loadingBar
+:: if not exist batbox.exe (
+:: set /a "hasbatb=1"
+:: )
+:: if exist cmdmenusel.exe goto :loadingBar
+:: if not exist cmdmenusel.exe (
+:: set /a "hasmenus=1"
+:: )
+:: if "%hasmenus%" == "1" && "%hasbabt%" == "1" (
+:: echo The following files are missing:
+:: echo cmdmenusel.exe
+:: echo batbox.exe
+:: TIMEOUT 2
+:: echo Please download these files and put it in the same file where LEXER OS is located and try again.
+:: echo If you are experiencing issues, please contact purpleguygamer582@gmail.com for the support.
+:: pause
+:: exit /b
+:: )
+::  exit /b
 
-:checkSettings
-title LEXER
-set reg_qry=reg Query "HKCU\Console\%SystemRoot%_system32_cmd.exe\" /v
-for /f "skip=2 tokens=1,2,*" %%A in ('%reg_locale% QuickEdit') do set "quickEdit=%%C"
-if "%quickEdit%" == "0" call :loadingBar
-if "%quickEdit%" == "1" (
-	reg add "HKCU\Console\%SystemRoot%_system32_cmd.exe\" /v QuickEdit /t REG_DWORD /d 0 /f
+::checkSettings
+::title LEXER
+:: set reg_qry=reg Query "HKCU\Console\%SystemRoot%_system32_cmd.exe\" /v
+:: for /f "skip=2 tokens=1,2,*" %%A in ('%reg_locale% QuickEdit') do set "quickEdit=%%C"
+:: if "%quickEdit%" == "0" call :loadingBar
+:: if "%quickEdit%" == "1" (
+::	reg add "HKCU\Console\%SystemRoot%_system32_cmd.exe\" /v QuickEdit /t REG_DWORD /d 0 /f
+::)
+
+:mailer
+cls
+title LEXER Mailer [Checking connectivity]
+echo Checking if connected. . .
+TIMEOUT 1
+netsh interface show interface | findstr /i “wifi wireless”
+ping -n 1 www.google.com | find "Reply From " > NUL
+if not "%ERRORLEVEL%" == 1 (
+	title LEXER Mailer [Connected]
+	echo You are connected!
+	goto :sendMail
 )
+if "%ERRORLEVEL%" == 1 (
+	title LEXER Mailer [Disconnected]
+	echo You need a network connection if you want to send an email
+	goto :dekstop
+)
+
+:sendMail
+title LEXER Mailer
+set /p "address=Email: "
+set /p "server=Server: "
+set /p "sender=From: "
+set /p "subject=Subject: "
+set /p "body=Description: "
+blat -to %address% -server %server% -f %from% -subject "%subject%" -body "%body%"
+
+:errorHandler
+if "%corrupted%" == "1" (
+
+call :clearScreen
+batbox /c 0x30 /g 43 10 /d " Cannot continue the operation " ^
+               /g 13 12 /d " One of the files is corrupted or either it is not designed to not run on this version of LEXER " ^
+               /g 13 13 /d " Please contact your system administrator, run a built in repair tool or reinstall the OS "
+>nul batbox /m
+call :clearScreen
+goto :desktop
+)
+
+:games
+for /L %%A in (15,1,17) do (
+	batbox /g 31 %%A /c 0x11 /d "                                "
+)
+set "gms_option=batbox /g 32 xxx /c 0x1F /d"
+%:::xxx=14% "Security and Updates           "
+%gms_option:xxx=16% "Tic Tac Toe 			        "
+%gms_option:xxx=17% "MineSweeper (Not Available)    "
+%gms_option:xxx=18% "Coming soon!                   "
+
+:clickGames
+call :getClick
+title [%mouse_X%:%mouse_Y%] - %mouse_C%
+:: See if we're closing the Control Panel
+for /L %%A in (1,1,30) do (
+	if "%mouse_X%"=="%%A" if "%mouse_Y%"=="14" (
+		for /L %%B in (18,-1,14) do (
+			batbox /g 31 %%B /c 0x00 /d "                                "
+		)
+		goto :clickStart
+	)
+)
+for /L %%A in (31,1,63) do (
+	if "%mouse_X%"=="%%A" (
+		if "%mouse_Y%"=="16" goto :tictactoe
+	)
+)
+goto :clickGames
+
+:tictactoe
