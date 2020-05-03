@@ -33,4 +33,12 @@ Second rule is, if scanner wasn't runned on startup, please see if it's an inter
 
 If you think that both of the files were infected (including the update file), then send it to the contributors.
 
+## How do I treat the file if I was infected?
+
+In the Security tab, there will be a draft IF the infection is critical or low and will show you how to remove it (if possible). It will even show on what version does it support. Since LEXER is made in batch, there is a 99% chance that the script may work on other versions but we higly doubt that the script will affect other versions UNLESS if the script can modify other versions of LEXER.
+
+## My Antivirus detects LEXER as a virus, what should I do?
+
+Batch is a powerful language since it can control everything in Windows. That is one of the reasons, but Batch is used for cracking and it's considered as an HACKTOOL such as Windows Activation Batch Script. If LEXER gets detected and you are unsure, you can run our Scanner.bat file located with LEXER. If you are tired of getting these false positives, then exclude it from the scan OR send it for analysis (and if lucky, they might remove it from their virus definitions).
+
 STAY SAFE!
