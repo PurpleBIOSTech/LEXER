@@ -1,3 +1,5 @@
+[THE FILE IS OUTDATED! DO NOT PUT IT IN THE UPDATE.BAT!]
+
 ::------------------------------------------------------------------------------
 :: NAME:         LEXER OS Project
 :: CONTRIBUTORS: Cross_Sans21 and Shadow_Thief
